@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Video Gallery</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600&family=Montserrat:wght@200;400&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #0e0e0e;
+    font-family: 'Montserrat', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+  }
+
+  .wrapper {
+    width: 100%;
+    max-width: 1100px;
+  }
+
+  .title {
+    font-family: 'Cormorant Garamond', serif;
+    font-weight: 300;
+    font-size: clamp(1.4rem, 3vw, 2rem);
+    color: #f0ebe3;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    text-align: center;
+    margin-bottom: 36px;
+    opacity: 0;
+    animation: fadeUp 0.8s ease forwards 0.1s;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+
+  .card {
+    position: relative;
+    cursor: pointer;
+    border-radius: 4px;
+    overflow: hidden;
+    background: #1a1a1a;
+    opacity: 0;
+    transform: translateY(20px);
+    animation: fadeUp 0.7s ease forwards;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+
+  .card:nth-child(1) { animation-delay: 0.2s; }
+  .card:nth-child(2) { animation-delay: 0.35s; }
+  .card:nth-child(3) { animation-delay: 0.5s; }
+
+  .card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 40px rgba(0,0,0,0.6);
+  }
+
+  .card.active {
+    outline: 1.5px solid #c9a96e;
+    box-shadow: 0 0 0 3px rgba(201,169,110,0.15), 0 16px 48px rgba(0,0,0,0.7);
+    transform: translateY(-4px);
+  }
+
+  .thumb-wrap {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16/9;
+    overflow: hidden;
+  }
+
+  .thumb-wrap img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s ease, filter 0.3s ease;
+    filter: brightness(0.75);
+  }
+
+  .card:hover .thumb-wrap img,
+  .card.active .thumb-wrap img {
+    transform: scale(1.04);
+    filter: brightness(0.55);
+  }
+
+  .play-btn {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 0.3s;
+  }
+
+  .play-circle {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    border: 1.5px solid rgba(255,255,255,0.7);
+    background: rgba(0,0,0,0.35);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(4px);
+    transition: background 0.3s, border-color 0.3s, transform 0.3s;
+  }
+
+  .card:hover .play-circle,
+  .card.active .play-circle {
+    background: rgba(201,169,110,0.25);
+    border-color: #c9a96e;
+    transform: scale(1.1);
+  }
+
+  .play-circle svg {
+    width: 18px;
+    height: 18px;
+    fill: #fff;
+    margin-left: 3px;
+  }
+
+  .card-label {
+    padding: 12px 14px 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .num {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.3rem;
+    font-weight: 300;
+    color: #c9a96e;
+    line-height: 1;
+    min-width: 20px;
+  }
+
+  .label-text {
+    font-size: 0.65rem;
+    font-weight: 400;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #aaa;
+    transition: color 0.3s;
+  }
+
+  .card.active .label-text,
+  .card:hover .label-text {
+    color: #f0ebe3;
+  }
+
+  .player-wrap {
+    margin-top: 24px;
+    width: 100%;
+    aspect-ratio: 16/9;
+    border-radius: 4px;
+    overflow: hidden;
+    background: #111;
+    position: relative;
+    opacity: 0;
+    animation: fadeUp 0.7s ease forwards 0.65s;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.7);
+  }
+
+  .player-wrap iframe {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: none;
+    display: none;
+  }
+
+  .player-wrap iframe.active {
+    display: block;
+  }
+
+  .player-placeholder {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    color: #444;
+  }
+
+  .player-placeholder svg {
+    width: 40px;
+    height: 40px;
+    opacity: 0.3;
+  }
+
+  .player-placeholder p {
+    font-size: 0.65rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+  }
+
+  @keyframes fadeUp {
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @media (max-width: 600px) {
+    .grid { grid-template-columns: 1fr; gap: 12px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrapper">
+  <div class="title">Selected Works</div>
+
+  <div class="grid">
+    <!-- Card 1 -->
+    <div class="card" onclick="playVideo(0)">
+      <div class="thumb-wrap">
+        <img src="https://img.youtube.com/vi/iEDtaTjZRxU/mqdefault.jpg" alt="Video 1">
+        <div class="play-btn">
+          <div class="play-circle">
+            <svg viewBox="0 0 24 24"><polygon points="5,3 19,12 5,21"/></svg>
+          </div>
+        </div>
+      </div>
+      <div class="card-label">
+        <span class="num">01</span>
+        <span class="label-text">Video 01</span>
+      </div>
+    </div>
+
+    <!-- Card 2 -->
+    <div class="card" onclick="playVideo(1)">
+      <div class="thumb-wrap">
+        <img src="https://img.youtube.com/vi/Jtai4zPQJAo/mqdefault.jpg" alt="Video 2">
+        <div class="play-btn">
+          <div class="play-circle">
+            <svg viewBox="0 0 24 24"><polygon points="5,3 19,12 5,21"/></svg>
+          </div>
+        </div>
+      </div>
+      <div class="card-label">
+        <span class="num">02</span>
+        <span class="label-text">Video 02</span>
+      </div>
+    </div>
+
+    <!-- Card 3 -->
+    <div class="card" onclick="playVideo(2)">
+      <div class="thumb-wrap">
+        <img src="https://img.youtube.com/vi/6M5Y2sRvpos/mqdefault.jpg" alt="Video 3">
+        <div class="play-btn">
+          <div class="play-circle">
+            <svg viewBox="0 0 24 24"><polygon points="5,3 19,12 5,21"/></svg>
+          </div>
+        </div>
+      </div>
+      <div class="card-label">
+        <span class="num">03</span>
+        <span class="label-text">Video 03</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Player -->
+  <div class="player-wrap" id="playerWrap">
+    <div class="player-placeholder" id="placeholder">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+        <circle cx="12" cy="12" r="10"/><polygon points="10,8 16,12 10,16" fill="currentColor" stroke="none"/>
+      </svg>
+      <p>選擇上方影片播放</p>
+    </div>
+
+    <iframe id="v0"
+      src="https://www.youtube.com/embed/iEDtaTjZRxU?si=ZeR-GEW--AII1bc-&enablejsapi=1"
+      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+      referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+
+    <iframe id="v1"
+      src="https://www.youtube.com/embed/Jtai4zPQJAo?si=_AemlNHWaz1jdCL-&enablejsapi=1"
+      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+      referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+
+    <iframe id="v2"
+      src="https://www.youtube.com/embed/6M5Y2sRvpos?si=IRVHW-I9-jJccnUk&enablejsapi=1"
+      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+      referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+  </div>
+</div>
+
+<script>
+  let current = -1;
+
+  function playVideo(index) {
+    const cards = document.querySelectorAll('.card');
+    const iframes = document.querySelectorAll('#playerWrap iframe');
+    const placeholder = document.getElementById('placeholder');
+
+    if (current >= 0 && current !== index) {
+      iframes[current].contentWindow.postMessage(
+        '{"event":"command","func":"pauseVideo","args":""}', '*'
+      );
+    }
+
+    cards.forEach((c, i) => c.classList.toggle('active', i === index));
+    iframes.forEach((f, i) => f.classList.toggle('active', i === index));
+    placeholder.style.display = 'none';
+
+    iframes[index].contentWindow.postMessage(
+      '{"event":"command","func":"playVideo","args":""}', '*'
+    );
+
+    current = index;
+  }
+</script>
+</body>
+</html>
